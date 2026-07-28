@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RFP Automation Platform — Modern System Architecture Flow</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg-main: #0b0f19;
+  --bg-card: #131b2e;
+  --bg-card-hover: #1c2842;
+  --border: #23314d;
+  --border-highlight: #3b82f6;
+  --text-main: #f3f4f6;
+  --text-muted: #9ca3af;
+  --text-sub: #6b7280;
+  
+  /* Stage Colors */
+  --stage-1: #818cf8; /* Ingestion - Indigo */
+  --stage-2: #34d399; /* Eligibility - Emerald */
+  --stage-3: #fb7185; /* Orchestration - Rose */
+  --stage-4: #fbbf24; /* Writers - Amber */
+  --stage-5: #38bdf8; /* Review - Sky Blue */
+  --stage-6: #4ade80; /* Assembly - Green */
+  --gate-color: #e879f9; /* Gates - Fuchsia */
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background-color: var(--bg-main);
+  color: var(--text-main);
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  overflow: hidden;
+  height: 100vh;
+  width: 100vw;
+}
+
+/* Background Grid Pattern */
+.bg-grid {
+  position: absolute;
+  inset: 0;
+  background-size: 32px 32px;
+  background-image: 
+    linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+  pointer-events: none;
+}
+
+/* Header Navbar */
+header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 64px;
+  background: rgba(11, 15, 25, 0.85);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  z-index: 50;
+}
+.brand { display: flex; align-items: center; gap: 12px; }
+.brand-icon {
+  width: 32px; height: 32px; border-radius: 8px;
+  background: linear-gradient(135deg, #6366f1, #a855f7);
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 16px; color: #fff;
+}
+.brand-text h1 { font-size: 16px; font-weight: 600; letter-spacing: -0.01em; }
+.brand-text p { font-size: 12px; color: var(--text-muted); }
+
+/* Controls & Toolbar */
+.toolbar { display: flex; align-items: center; gap: 12px; }
+.search-box {
+  position: relative;
+  display: flex; align-items: center;
+}
+.search-box input {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 6px 14px 6px 32px;
+  color: var(--text-main);
+  font-size: 12px;
+  width: 200px;
+  outline: none;
+  transition: all 0.2s;
+}
+.search-box input:focus { border-color: var(--border-highlight); width: 240px; }
+.search-box svg { position: absolute; left: 10px; width: 14px; height: 14px; fill: var(--text-muted); }
+
+.tool-btn {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  color: var(--text-main);
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  cursor: pointer;
+  display: flex; align-items: center; gap: 6px;
+  transition: all 0.15s;
+}
+.tool-btn:hover { background: var(--bg-card-hover); border-color: var(--border-highlight); }
+
+/* Legend Bar */
+.legend-bar {
+  position: fixed;
+  bottom: 20px;
+  left: 24px;
+  background: rgba(19, 27, 46, 0.9);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--border);
+  padding: 10px 16px;
+  border-radius: 30px;
+  display: flex;
+  gap: 16px;
+  font-size: 11px;
+  color: var(--text-muted);
+  z-index: 40;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+}
+.leg-item { display: flex; align-items: center; gap: 6px; }
+.leg-dot { width: 8px; height: 8px; border-radius: 50%; }
+
+/* Pan Zoom Container */
+#viewport {
+  width: 100vw;
+  height: 100vh;
+  overflow: auto;
+  position: relative;
+  cursor: grab;
+  padding-top: 80px;
+  padding-bottom: 100px;
+}
+#viewport:active { cursor: grabbing; }
+
+#flow-container {
+  position: relative;
+  width: 1400px;
+  margin: 0 auto;
+  min-height: 2200px;
+  transform-origin: 0 0;
+  transition: transform 0.1s ease-out;
+}
+
+/* SVG Connections Overlay */
+#svg-edges {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  pointer-events: none;
+  z-index: 5;
+}
+path.edge-line {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.12);
+  stroke-width: 1.8px;
+  transition: stroke 0.25s, stroke-width 0.25s, opacity 0.25s;
+}
+path.edge-line.dashed { stroke-dasharray: 5, 5; }
+path.edge-line.highlight-out { stroke: #38bdf8 !important; stroke-width: 3px !important; opacity: 1 !important; }
+path.edge-line.highlight-in { stroke: #a855f7 !important; stroke-width: 3px !important; opacity: 1 !important; }
+path.edge-line.dimmed { opacity: 0.08 !important; }
+
+/* Swimlane Sections */
+.stage-lane {
+  position: absolute;
+  left: 20px;
+  right: 20px;
+  border: 1px dashed rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.01);
+  pointer-events: none;
+}
+.stage-label {
+  position: absolute;
+  top: 14px;
+  left: 18px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  border-radius: 20px;
+  background: rgba(255,255,255,0.05);
+}
+
+/* Architecture Node Styling */
+.node {
+  position: absolute;
+  width: 160px;
+  min-height: 62px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 10px 12px;
+  cursor: pointer;
+  z-index: 10;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.node:hover {
+  transform: translateY(-3px) scale(1.02);
+  border-color: var(--border-highlight);
+  box-shadow: 0 8px 24px rgba(59, 130, 246, 0.25);
+}
+.node.dimmed { opacity: 0.2; transform: scale(0.98); }
+.node.selected { border-color: #fff !important; box-shadow: 0 0 20px rgba(255,255,255,0.4); }
+
+.node-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+.node-title { font-size: 12px; font-weight: 600; color: var(--text-main); line-height: 1.2; }
+.node-sub { font-size: 10px; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; }
+.node-badge {
+  font-size: 9px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 10px;
+  text-transform: uppercase;
+  margin-top: 4px;
+  align-self: flex-start;
+}
+
+/* Gate Node Variant */
+.node.gate-node {
+  border-color: rgba(232, 121, 249, 0.4);
+  background: linear-gradient(135deg, rgba(232, 121, 249, 0.08), rgba(19, 27, 46, 0.95));
+}
+.node.gate-node .node-title { color: #f472b6; }
+
+/* Detail Slide Drawer */
+.drawer-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  z-index: 100;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s;
+}
+.drawer-overlay.open { opacity: 1; pointer-events: all; }
+
+.drawer {
+  position: fixed;
+  top: 0; right: -480px; width: 440px; height: 100vh;
+  background: var(--bg-card);
+  border-left: 1px solid var(--border);
+  box-shadow: -10px 0 30px rgba(0,0,0,0.5);
+  z-index: 101;
+  transition: right 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex; flex-direction: column;
+  padding: 24px;
+}
+.drawer.open { right: 0; }
+.drawer-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; }
+.drawer-tag { font-size: 10px; font-weight: 700; padding: 4px 10px; border-radius: 20px; text-transform: uppercase; }
+.drawer-close { background: none; border: none; color: var(--text-muted); font-size: 20px; cursor: pointer; }
+.drawer-close:hover { color: #fff; }
+
+.drawer-title { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
+.drawer-subtitle { font-size: 12px; color: var(--stage-1); font-family: 'JetBrains Mono', monospace; margin-bottom: 16px; }
+.drawer-desc { font-size: 13px; color: var(--text-muted); line-height: 1.6; margin-bottom: 24px; background: rgba(0,0,0,0.2); padding: 12px; border-radius: 8px; border: 1px solid var(--border); }
+
+.spec-list { display: flex; flex-direction: column; gap: 12px; }
+.spec-item { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 12px; }
+.spec-label { color: var(--text-muted); }
+.spec-val { font-weight: 500; color: var(--text-main); text-align: right; max-width: 220px; }
+</style>
+</head>
+<body>
+
+<div class="bg-grid"></div>
+
+<!-- Header -->
+<header>
+  <div class="brand">
+    <div class="brand-icon">⚡</div>
+    <div class="brand-text">
+      <h1>RFP Automation Architecture</h1>
+      <p>Multi-Agent AI System · Top-to-Bottom Data Flow Map</p>
+    </div>
+  </div>
+  
+  <div class="toolbar">
+    <div class="search-box">
+      <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+      <input type="text" id="search-input" placeholder="Search component..." onkeyup="filterNodes()">
+    </div>
+    <button class="tool-btn" onclick="resetZoom()">↺ Reset View</button>
+  </div>
+</header>
+
+<!-- Legend -->
+<div class="legend-bar">
+  <div class="leg-item"><div class="leg-dot" style="background:var(--stage-1)"></div>1. Ingestion</div>
+  <div class="leg-item"><div class="leg-dot" style="background:var(--stage-2)"></div>2. Eligibility</div>
+  <div class="leg-item"><div class="leg-dot" style="background:var(--stage-3)"></div>3. Orchestration</div>
+  <div class="leg-item"><div class="leg-dot" style="background:var(--stage-4)"></div>4. Writers</div>
+  <div class="leg-item"><div class="leg-dot" style="background:var(--stage-5)"></div>5. Review</div>
+  <div class="leg-item"><div class="leg-dot" style="background:var(--stage-6)"></div>6. Submit</div>
+  <div class="leg-item"><div class="leg-dot" style="background:var(--gate-color)"></div>Human Approval Gate</div>
+</div>
+
+<!-- Main Canvas Viewport -->
+<div id="viewport">
+  <div id="flow-container">
+    <!-- SVG Connection Layer -->
+    <svg id="svg-edges">
+      <defs>
+        <marker id="arrow" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="rgba(255,255,255,0.3)"/>
+        </marker>
+        <marker id="arrow-blue" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="#38bdf8"/>
+        </marker>
+        <marker id="arrow-purple" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="#a855f7"/>
+        </marker>
+      </defs>
+    </svg>
+
+    <!-- Stage Swimlanes & Nodes generated dynamically -->
+  </div>
+</div>
+
+<!-- Technical Detail Drawer -->
+<div class="drawer-overlay" id="drawer-overlay" onclick="closeDrawer()"></div>
+<div class="drawer" id="drawer">
+  <div class="drawer-header">
+    <span class="drawer-tag" id="d-tag">Stage 1</span>
+    <button class="drawer-close" onclick="closeDrawer()">✕</button>
+  </div>
+  <h2 class="drawer-title" id="d-title">Node Title</h2>
+  <div class="drawer-subtitle" id="d-sub">Subtitle / Tech Specs</div>
+  <div class="drawer-desc" id="d-desc">Description of component functionality.</div>
+  
+  <div class="spec-list" id="d-specs">
+    <!-- Dynamic key-value pairs -->
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+//  DATA DEFINITIONS & SPECIFICATIONS
+// ═══════════════════════════════════════════════════════════
+const STAGES = [
+  { id: 0, name: "Stage 1 — Ingestion & Requirement Extraction", color: "var(--stage-1)", y: 40, height: 320 },
+  { id: 1, name: "Stage 2 — Hard Gate & Eligibility Scoring", color: "var(--stage-2)", y: 390, height: 340 },
+  { id: 2, name: "Stage 3 — Orchestration, Resource Check & Plan", color: "var(--stage-3)", y: 760, height: 420 },
+  { id: 3, name: "Stage 4 — Proposal Writer Agents", color: "var(--stage-4)", y: 1210, height: 260 },
+  { id: 4, name: "Stage 5 — Comment & Review Loop", color: "var(--stage-5)", y: 1500, height: 240 },
+  { id: 5, name: "Stage 6 — Final Assembly & Submission", color: "var(--stage-6)", y: 1770, height: 160 }
+];
+
+// Nodes mapped with clean vertical Top-to-Bottom coordinate points
+const NODES = [
+  // Stage 1
+  { id:'upload', label:'RFP Upload', sub:'PDF / DOCX Intake', stage:0, x:150, y:90 },
+  { id:'markitdown', label:'MarkItDown', sub:'Convert → Markdown', stage:0, x:380, y:90 },
+  { id:'chunker', label:'Chunker', sub:'512 token chunks', stage:0, x:610, y:90 },
+  { id:'graph_ext', label:'Graph Extractor', sub:'Claude Sonnet Agent', stage:0, x:840, y:90 },
+  { id:'embed', label:'Embed Agent', sub:'Sentence-Transformers', stage:0, x:610, y:180 },
+  { id:'neo4j', label:'Requirement Graph', sub:'DynamoDB Adjacency', stage:0, x:840, y:180 },
+  { id:'pinecone', label:'FAISS Index', sub:'Local Vector Store', stage:0, x:610, y:270 },
+  { id:'date_ext', label:'Date Extractor', sub:'Calendar & Slack', stage:0, x:1070, y:90 },
+  { id:'gate1', label:'HUMAN GATE 1', sub:'Review Graph Specs', stage:0, isGate:true, x:840, y:280 },
+
+  // Stage 2
+  { id:'hard_gate', label:'Hard Pass Gate', sub:'7 Disqualifiers', stage:1, x:150, y:440 },
+  { id:'law_check', label:'Law & Req Check', sub:'Statute Compliance', stage:1, x:380, y:440 },
+  { id:'exp_gate', label:'Partner Check', sub:'COTS Exceptions', stage:1, x:610, y:440 },
+  { id:'scorer', label:'Weighted Scorer', sub:'100-Point Model', stage:1, x:840, y:440 },
+  { id:'elig_rpt', label:'Eligibility Report', sub:'Fit & Risk Score', stage:1, x:610, y:530 },
+  { id:'admin_notify1', label:'Admin Notify', sub:'Alert on Failure', stage:1, x:150, y:530 },
+  { id:'gate2', label:'GO / NO-GO GATE', sub:'Bid Approval', stage:1, isGate:true, x:610, y:620 },
+  { id:'timeline', label:'Proposal Timeline', sub:'Schedule Buffer', stage:1, x:840, y:620 },
+
+  // Stage 3
+  { id:'master', label:'Master Agent', sub:'Task Dispatcher', stage:2, x:610, y:810 },
+  { id:'emp_f', label:'Employee Fetch', sub:'HRIS Records', stage:2, x:150, y:900 },
+  { id:'con_f', label:'Contract Fetch', sub:'Past Performance DB', stage:2, x:330, y:900 },
+  { id:'com_f', label:'Compliance Fetch', sub:'SAM.gov / Certs', stage:2, x:510, y:900 },
+  { id:'pri_f', label:'Pricing Fetch', sub:'Rate Matrix', stage:2, x:690, y:900 },
+  { id:'fin_f', label:'Financial Fetch', sub:'S3 Financials', stage:2, x:870, y:900 },
+  { id:'res_check', label:'Resource Check', sub:'Capacity Matrix', stage:2, x:1050, y:900 },
+  { id:'fq_wr', label:'Follow-up Qs', sub:'Clarifications', stage:2, x:420, y:990 },
+  { id:'gate3', label:'HUMAN GATE 3', sub:'Confirm Clarifications', stage:2, isGate:true, x:420, y:1080 },
+  { id:'ai_suggest', label:'AI Suggested Plan', sub:'Proposal Outline', stage:2, x:730, y:990 },
+  { id:'gate3b', label:'HUMAN GATE 3b', sub:'Edit & Plan Sign-off', stage:2, isGate:true, x:730, y:1080 },
+
+  // Stage 4
+  { id:'sol_w', label:'Solution Writer', sub:'Technical Approach', stage:3, x:150, y:1260 },
+  { id:'exp_w', label:'Experience Writer', sub:'Past Performance', stage:3, x:360, y:1260 },
+  { id:'per_w', label:'Personnel Writer', sub:'Staff Profiles', stage:3, x:570, y:1260 },
+  { id:'com_w', label:'Compliance Writer', sub:'12 Cert Paragraphs', stage:3, x:780, y:1260 },
+  { id:'pri_w', label:'Pricing Writer', x:990, y:1260, sub:'E4.1 Pricing xlsx', stage:3 },
+  { id:'validator', label:'Citation Validator', sub:'Fact Grounding Pass', stage:3, x:570, y:1360 },
+
+  // Stage 5
+  { id:'gate4', label:'4-STAGE REVIEW', sub:'Multi-tier Signoff', stage:4, isGate:true, x:250, y:1550 },
+  { id:'editor', label:'Doc Editor', sub:'TipTap Editor', stage:4, x:500, y:1550 },
+  { id:'ai_edit', label:'AI Edit Agent', sub:'Range Rewrite', stage:4, x:710, y:1550 },
+  { id:'diff_v', label:'Diff Viewer', sub:'Red/Green Review', stage:4, x:920, y:1550 },
+  { id:'ver_hist', label:'Version History', sub:'S3 Immutable Log', stage:4, x:1130, y:1550 },
+
+  // Stage 6
+  { id:'assembler', label:'Document Assembler', sub:'Portal Direct Upload', stage:5, x:610, y:1820 },
+];
+
+// Connection Edges
+const EDGES = [
+  // Stage 1
+  { from:'upload', to:'markitdown' },
+  { from:'markitdown', to:'chunker' },
+  { from:'chunker', to:'graph_ext' },
+  { from:'chunker', to:'embed' },
+  { from:'graph_ext', to:'neo4j' },
+  { from:'embed', to:'pinecone' },
+  { from:'graph_ext', to:'date_ext' },
+  { from:'date_ext', to:'gate1' },
+  { from:'neo4j', to:'gate1' },
+
+  // Stage 1 → Stage 2
+  { from:'gate1', to:'hard_gate' },
+  { from:'gate1', to:'exp_gate' },
+  { from:'gate1', to:'scorer' },
+
+  // Stage 2
+  { from:'hard_gate', to:'law_check' },
+  { from:'neo4j', to:'law_check', dashed:true },
+  { from:'law_check', to:'elig_rpt' },
+  { from:'exp_gate', to:'elig_rpt' },
+  { from:'scorer', to:'elig_rpt' },
+  { from:'elig_rpt', to:'gate2' },
+  { from:'hard_gate', to:'admin_notify1', dashed:true },
+  { from:'law_check', to:'admin_notify1', dashed:true },
+  { from:'gate2', to:'admin_notify1', dashed:true },
+  { from:'gate2', to:'timeline' },
+
+  // Stage 2 → Stage 3
+  { from:'timeline', to:'master' },
+
+  // Stage 3
+  { from:'master', to:'emp_f' },
+  { from:'master', to:'con_f' },
+  { from:'master', to:'com_f' },
+  { from:'master', to:'pri_f' },
+  { from:'master', to:'fin_f' },
+  { from:'master', to:'res_check' },
+  { from:'emp_f', to:'fq_wr', dashed:true },
+  { from:'con_f', to:'fq_wr', dashed:true },
+  { from:'fq_wr', to:'gate3' },
+  { from:'gate3', to:'ai_suggest' },
+  { from:'res_check', to:'ai_suggest', dashed:true },
+  { from:'pinecone', to:'ai_suggest', dashed:true },
+  { from:'ai_suggest', to:'gate3b' },
+
+  // Stage 3 → Stage 4
+  { from:'gate3b', to:'sol_w' },
+  { from:'emp_f', to:'per_w' },
+  { from:'con_f', to:'exp_w' },
+  { from:'com_f', to:'com_w' },
+  { from:'pri_f', to:'pri_w' },
+  { from:'pinecone', to:'sol_w', dashed:true },
+
+  // Stage 4
+  { from:'sol_w', to:'validator' },
+  { from:'exp_w', to:'validator' },
+  { from:'per_w', to:'validator' },
+  { from:'com_w', to:'validator' },
+  { from:'pri_w', to:'validator' },
+
+  // Stage 5
+  { from:'validator', to:'gate4' },
+  { from:'gate4', to:'editor' },
+  { from:'editor', to:'ai_edit' },
+  { from:'ai_edit', to:'diff_v' },
+  { from:'diff_v', to:'ver_hist' },
+
+  // Stage 6
+  { from:'ver_hist', to:'assembler' },
+];
+
+// Node Technical Specs
+const NODE_DETAILS = {
+  upload: { desc:'Entry point for all incoming RFP documents. Accepts PDF, DOCX, XLSX and scanned forms.', rows:[['Input Formats','PDF, DOCX, XLSX'],['Storage','Raw file → S3 (versioned)'],['Source','Email intake / Portal Watcher']] },
+  markitdown: { desc:'Converts uploaded formats into clean Markdown while preserving headers, tables, and section structure.', rows:[['Library','MarkItDown (Microsoft OSS)'],['Output','Structured Markdown']] },
+  chunker: { desc:'Splits long documents into overlapping text chunks optimized for LLM extraction.', rows:[['Chunk Size','512 tokens'],['Overlap','50 tokens'],['Tags','rfp_id, section, page_num']] },
+  graph_ext: { desc:'LLM agent reading chunks and extracting obligations, evaluation criteria, and deadlines into a requirement graph.', rows:[['Model','Claude Sonnet'],['Evidence','Every node cites page + quote']] },
+  embed: { desc:'Generates dense vector embeddings for semantic retrieval during proposal writing.', rows:[['Model','Sentence-Transformers (Local)'],['Privacy','Data stays fully in-house']] },
+  neo4j: { desc:'Lightweight custom requirement graph stored on DynamoDB single-table design.', rows:[['Storage','AWS DynamoDB'],['Pattern','Adjacency list design']] },
+  pinecone: { desc:'Self-hosted FAISS vector storage replacing managed SaaS vector DBs.', rows:[['Library','FAISS (Facebook AI Search)'],['Hosting','In-process / EFS backed']] },
+  date_ext: { desc:'Scans extracted graph for key milestone dates and schedules alerts.', rows:[['Detects','Pre-bid conf, Q&A deadline, submission'],['Push','Shared Calendar & Slack']] },
+  gate1: { desc:'First human checkpoint. Admin verifies requirement graph completeness.', rows:[['Reviewer','Admin / RFP Owner'],['Action','Confirm node counts & dates']] },
+  hard_gate: { desc:'Runs 7 auto-disqualifier checks (IT check, COTS, reseller, on-site, offshore, platform lock-in, non-IT).', rows:[['Logic','100% Pass required'],['Execution','Pre-paid LLM check']] },
+  law_check: { desc:'Cross-checks statute nodes against internal compliance databases.', rows:[['Checks','E-Verify, Israel Boycott §2271, Divestment'],['Failure Path','Routes to Stage 3 Clarifications']] },
+  exp_gate: { desc:'Checks for partner product references (DocAide, DirectSoft, InsurGPT).', rows:[['Effect','Waives COTS disqualifier if match found']] },
+  scorer: { desc:'Evaluates 100-point rubric across 5 core feasibility dimensions.', rows:[['Subtype','40 pts'],['Budget','25 pts'],['Location','20 pts'],['Timeline','10 pts'],['Qualifications','5 pts']] },
+  elig_rpt: { desc:'Consolidates hard pass results and weighted scoring into an actionable bid recommendation.', rows:[['Categories','HIGH_FIT ≥70 · MEDIUM 50-69 · LOW <50']] },
+  admin_notify1: { desc:'Triggers automatic notifications if an RFP fails disqualifiers or receives a NO-GO decision.', rows:[['Channels','Slack DM + Email Alert']] },
+  gate2: { desc:'Strategic decision point where approvers authorize proposal drafting expenses.', rows:[['Decision','PURSUE / NO-GO'],['Prevents','Unnecessary LLM cost on bad fits']] },
+  timeline: { desc:'Builds backward schedule from submission deadline with built-in safety buffers.', rows:[['Outputs','Draft due, Review due, Final submission']] },
+  master: { desc:'Orchestrator building execution manifests and fanning tasks out to sub-agents.', rows:[['Queue','AWS SQS FIFO'],['Pattern','Fan-out architecture']] },
+  emp_f: { desc:'Pulls relevant personnel experience from internal HR systems.', rows:[['Source','HRIS API']] },
+  con_f: { desc:'Queries historical contract DB for past performance citations.', rows:[['Source','PostgreSQL Contracts DB']] },
+  com_f: { desc:'Checks active registrations and security certifications.', rows:[['Source','SAM.gov + internal ISO records']] },
+  pri_f: { desc:'Retrieves internal rate matrix for cost estimations.', rows:[['Source','Internal Rate Card Matrix']] },
+  fin_f: { desc:'Retrieves audited financials and insurance certificates.', rows:[['Source','S3 Financial Vault']] },
+  res_check: { desc:'Verifies team availability against active project commitments.', rows:[['Checks','Overlap %, active project hours']] },
+  fq_wr: { desc:'Drafts precise vendor clarification questions for missing information.', rows:[['Rule','Never assume ambiguous requirements']] },
+  gate3: { desc:'Human checkpoint to review and confirm vendor clarification questions.', rows:[['Action','Provide inputs on generated Qs']] },
+  ai_suggest: { desc:'Synthesizes solution approach, team assignment, and commercial terms.', rows:[['Output','Draft Proposal Plan']] },
+  gate3b: { desc:'Reviewer edits and signs off on the technical plan before writer dispatch.', rows:[['Action','Add/remove technical approach items']] },
+  sol_w: { desc:'Drafts main technical solution approach section using RAG context.', rows:[['Output','E2.1.3 Approach section']] },
+  exp_w: { desc:'Drafts past performance narratives citing verified contracts.', rows:[['Output','Attachment A10 past performance']] },
+  per_w: { desc:'Drafts staff qualification sections and resume summaries.', rows:[['Output','E2.4 Key Personnel']] },
+  com_w: { desc:'Generates mandatory compliance paragraphs linked to requirement nodes.', rows:[['Output','12 certification paragraphs']] },
+  pri_w: { desc:'Populates required cost matrices and rate sheets.', rows:[['Output','E4.1 Pricing workbook (.xlsx)']] },
+  validator: { desc:'Automated quality pass checking that every claim cites a valid requirement node.', rows:[['Check','Fact grounding & citation resolution']] },
+  gate4: { desc:'Multi-tiered approval chain (Writer → Compliance → Approver → Admin).', rows:[['Type','Sequential Sign-off']] },
+  editor: { desc:'Collaborative document editor supporting range-bound inline comments.', rows:[['Engine','TipTap Rich Text']] },
+  ai_edit: { desc:'Rewrites specific character ranges based on reviewer feedback.', rows:[['Scope','Selected character range only']] },
+  diff_v: { desc:'Presents inline red/green comparison between original and AI rewrite.', rows:[['Display','Visual Text Diff']] },
+  ver_hist: { desc:'Stores immutable version logs of every accepted change.', rows:[['Storage','Versioned S3 Buckets']] },
+  assembler: { desc:'Packages finalized documents into exact required file formats and uploads to portal.', rows:[['Formats','.docx, .xlsx, .pdf, .mpp'],['Destination','Bonfire / Portal API']] },
+};
+
+// ═══════════════════════════════════════════════════════════
+//  RENDER ENGINE
+// ═══════════════════════════════════════════════════════════
+const container = document.getElementById('flow-container');
+const svgEdges = document.getElementById('svg-edges');
+
+// Render Swimlanes
+STAGES.forEach(s => {
+  const lane = document.createElement('div');
+  lane.className = 'stage-lane';
+  lane.style.top = s.y + 'px';
+  lane.style.height = s.height + 'px';
+  lane.innerHTML = `<span class="stage-label" style="color:${s.color}">${s.name}</span>`;
+  container.appendChild(lane);
+});
+
+// Render Nodes
+NODES.forEach(n => {
+  const nodeEl = document.createElement('div');
+  nodeEl.className = `node ${n.isGate ? 'gate-node' : ''}`;
+  nodeEl.id = `node-${n.id}`;
+  nodeEl.style.left = n.x + 'px';
+  nodeEl.style.top = n.y + 'px';
+  
+  const stageCol = STAGES[n.stage] ? STAGES[n.stage].color : 'var(--gate-color)';
+  
+  nodeEl.innerHTML = `
+    <div class="node-header">
+      <div class="node-title">${n.label}</div>
+    </div>
+    <div class="node-sub">${n.sub}</div>
+    <div class="node-badge" style="background:${stageCol}22; color:${n.isGate ? '#f472b6' : stageCol}">
+      ${n.isGate ? 'APPROVAL GATE' : `STAGE ${n.stage + 1}`}
+    </div>
+  `;
+
+  nodeEl.onclick = () => selectNode(n);
+  nodeEl.onmouseenter = () => highlightConnections(n.id);
+  nodeEl.onmouseleave = () => clearHighlights();
+
+  container.appendChild(nodeEl);
+});
+
+// Render SVG Edges with Smooth Bezier Curves
+function renderEdges() {
+  let paths = '';
+  EDGES.forEach((e, i) => {
+    const fromNode = NODES.find(n => n.id === e.from);
+    const toNode = NODES.find(n => n.id === e.to);
+    if(!fromNode || !toNode) return;
+
+    // Center coordinates
+    const fx = fromNode.x + 80;
+    const fy = fromNode.y + 60;
+    const tx = toNode.x + 80;
+    const ty = toNode.y;
+
+    // Smooth Top-to-Bottom Bezier Path
+    const deltaY = Math.abs(ty - fy);
+    const cy1 = fy + deltaY * 0.5;
+    const cy2 = ty - deltaY * 0.5;
+
+    const pathData = `M ${fx} ${fy} C ${fx} ${cy1}, ${tx} ${cy2}, ${tx} ${ty}`;
+    paths += `<path d="${pathData}" class="edge-line ${e.dashed ? 'dashed' : ''}" id="edge-${e.from}-${e.to}" marker-end="url(#arrow)"/>`;
+  });
+  svgEdges.innerHTML += paths;
+}
+
+renderEdges();
+
+// ═══════════════════════════════════════════════════════════
+//  INTERACTIVE HIGHLIGHTING & TRACING
+// ═══════════════════════════════════════════════════════════
+function highlightConnections(nodeId) {
+  document.querySelectorAll('.node').forEach(n => n.classList.add('dimmed'));
+  document.querySelectorAll('.edge-line').forEach(e => e.classList.add('dimmed'));
+
+  const currNode = document.getElementById(`node-${nodeId}`);
+  if(currNode) currNode.classList.remove('dimmed');
+
+  EDGES.forEach(e => {
+    if(e.from === nodeId) {
+      const edgeEl = document.getElementById(`edge-${e.from}-${e.to}`);
+      const targetNode = document.getElementById(`node-${e.to}`);
+      if(edgeEl) {
+        edgeEl.classList.remove('dimmed');
+        edgeEl.classList.add('highlight-out');
+        edgeEl.setAttribute('marker-end', 'url(#arrow-blue)');
+      }
+      if(targetNode) targetNode.classList.remove('dimmed');
+    }
+    if(e.to === nodeId) {
+      const edgeEl = document.getElementById(`edge-${e.from}-${e.to}`);
+      const sourceNode = document.getElementById(`node-${e.from}`);
+      if(edgeEl) {
+        edgeEl.classList.remove('dimmed');
+        edgeEl.classList.add('highlight-in');
+        edgeEl.setAttribute('marker-end', 'url(#arrow-purple)');
+      }
+      if(sourceNode) sourceNode.classList.remove('dimmed');
+    }
+  });
+}
+
+function clearHighlights() {
+  document.querySelectorAll('.node').forEach(n => n.classList.remove('dimmed'));
+  document.querySelectorAll('.edge-line').forEach(e => {
+    e.classList.remove('dimmed', 'highlight-out', 'highlight-in');
+    e.setAttribute('marker-end', 'url(#arrow)');
+  });
+}
+
+// ═══════════════════════════════════════════════════════════
+//  DETAIL DRAWER
+// ═══════════════════════════════════════════════════════════
+function selectNode(n) {
+  document.querySelectorAll('.node').forEach(node => node.classList.remove('selected'));
+  document.getElementById(`node-${n.id}`).classList.add('selected');
+
+  const detail = NODE_DETAILS[n.id] || { desc: 'Component details.', rows: [] };
+  const stageCol = STAGES[n.stage] ? STAGES[n.stage].color : 'var(--gate-color)';
+
+  const tagEl = document.getElementById('d-tag');
+  tagEl.textContent = n.isGate ? 'HUMAN APPROVAL GATE' : `STAGE ${n.stage + 1}`;
+  tagEl.style.background = stageCol + '22';
+  tagEl.style.color = n.isGate ? '#f472b6' : stageCol;
+
+  document.getElementById('d-title').textContent = n.label;
+  document.getElementById('d-sub').textContent = n.sub;
+  document.getElementById('d-desc').textContent = detail.desc;
+
+  const specList = document.getElementById('d-specs');
+  specList.innerHTML = '';
+  detail.rows.forEach(([k, v]) => {
+    specList.innerHTML += `
+      <div class="spec-item">
+        <span class="spec-label">${k}</span>
+        <span class="spec-val">${v}</span>
+      </div>
+    `;
+  });
+
+  document.getElementById('drawer-overlay').classList.add('open');
+  document.getElementById('drawer').classList.add('open');
+}
+
+function closeDrawer() {
+  document.getElementById('drawer-overlay').classList.remove('open');
+  document.getElementById('drawer').classList.remove('open');
+  document.querySelectorAll('.node').forEach(node => node.classList.remove('selected'));
+}
+
+// ═══════════════════════════════════════════════════════════
+//  SEARCH FILTER
+// ═══════════════════════════════════════════════════════════
+function filterNodes() {
+  const query = document.getElementById('search-input').value.toLowerCase();
+  NODES.forEach(n => {
+    const el = document.getElementById(`node-${n.id}`);
+    if (n.label.toLowerCase().includes(query) || n.sub.toLowerCase().includes(query)) {
+      el.style.display = 'flex';
+    } else {
+      el.style.display = 'none';
+    }
+  });
+}
+
+function resetZoom() {
+  const vp = document.getElementById('viewport');
+  vp.scrollTo({ top: 0, behavior: 'smooth' });
+}
+</script>
+</body>
+</html>
