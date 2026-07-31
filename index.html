@@ -144,7 +144,7 @@ header {
   position: relative;
   width: 1400px;
   margin: 0 auto;
-  min-height: 2200px;
+  min-height: 2000px;
   transform-origin: 0 0;
   transition: transform 0.1s ease-out;
 }
@@ -252,7 +252,7 @@ path.edge-line.dimmed { opacity: 0.08 !important; }
 
 .drawer {
   position: fixed;
-  top: 0; right: -480px; width: 440px; height: 100vh;
+  top: 0; right: -540px; width: 500px; height: 100vh;
   background: var(--bg-card);
   border-left: 1px solid var(--border);
   box-shadow: -10px 0 30px rgba(0,0,0,0.5);
@@ -260,21 +260,42 @@ path.edge-line.dimmed { opacity: 0.08 !important; }
   transition: right 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   display: flex; flex-direction: column;
   padding: 24px;
+  overflow-y: auto;
 }
 .drawer.open { right: 0; }
-.drawer-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; }
+.drawer-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; }
 .drawer-tag { font-size: 10px; font-weight: 700; padding: 4px 10px; border-radius: 20px; text-transform: uppercase; }
 .drawer-close { background: none; border: none; color: var(--text-muted); font-size: 20px; cursor: pointer; }
 .drawer-close:hover { color: #fff; }
 
 .drawer-title { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
 .drawer-subtitle { font-size: 12px; color: var(--stage-1); font-family: 'JetBrains Mono', monospace; margin-bottom: 16px; }
-.drawer-desc { font-size: 13px; color: var(--text-muted); line-height: 1.6; margin-bottom: 24px; background: rgba(0,0,0,0.2); padding: 12px; border-radius: 8px; border: 1px solid var(--border); }
+.drawer-desc { font-size: 13px; color: var(--text-muted); line-height: 1.6; margin-bottom: 20px; background: rgba(0,0,0,0.25); padding: 12px; border-radius: 8px; border: 1px solid var(--border); }
 
-.spec-list { display: flex; flex-direction: column; gap: 12px; }
-.spec-item { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 12px; }
+/* Structured Detail Sections in Drawer */
+.detail-section {
+  margin-bottom: 18px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px;
+}
+.section-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--stage-2);
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.spec-list { display: flex; flex-direction: column; gap: 8px; }
+.spec-item { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 12px; }
+.spec-item:last-child { border-bottom: none; }
 .spec-label { color: var(--text-muted); }
-.spec-val { font-weight: 500; color: var(--text-main); text-align: right; max-width: 220px; }
+.spec-val { font-weight: 500; color: var(--text-main); text-align: right; max-width: 250px; }
 </style>
 </head>
 <body>
@@ -344,8 +365,8 @@ path.edge-line.dimmed { opacity: 0.08 !important; }
   <div class="drawer-subtitle" id="d-sub">Subtitle / Tech Specs</div>
   <div class="drawer-desc" id="d-desc">Description of component functionality.</div>
   
-  <div class="spec-list" id="d-specs">
-    <!-- Dynamic key-value pairs -->
+  <div id="d-sections">
+    <!-- Dynamic Structured Detail Sections -->
   </div>
 </div>
 
@@ -354,72 +375,74 @@ path.edge-line.dimmed { opacity: 0.08 !important; }
 //  DATA DEFINITIONS & SPECIFICATIONS
 // ═══════════════════════════════════════════════════════════
 const STAGES = [
-  { id: 0, name: "Stage 1 — Ingestion & Requirement Extraction", color: "var(--stage-1)", y: 40, height: 320 },
-  { id: 1, name: "Stage 2 — Hard Gate & Eligibility Scoring", color: "var(--stage-2)", y: 390, height: 340 },
-  { id: 2, name: "Stage 3 — Orchestration, Resource Check & Plan", color: "var(--stage-3)", y: 760, height: 420 },
-  { id: 3, name: "Stage 4 — Proposal Writer Agents", color: "var(--stage-4)", y: 1210, height: 260 },
-  { id: 4, name: "Stage 5 — Comment & Review Loop", color: "var(--stage-5)", y: 1500, height: 240 },
-  { id: 5, name: "Stage 6 — Final Assembly & Submission", color: "var(--stage-6)", y: 1770, height: 160 }
+  { id: 0, name: "Stage 1 — Ingestion & Requirement Extraction", color: "var(--stage-1)", y: 40, height: 300 },
+  { id: 1, name: "Stage 2 — Hard Gate & Eligibility Scoring", color: "var(--stage-2)", y: 370, height: 340 },
+  { id: 2, name: "Stage 3 — Orchestration, Resource Check & Plan Intake", color: "var(--stage-3)", y: 740, height: 420 },
+  { id: 3, name: "Stage 4 — Proposal Writer Agents", color: "var(--stage-4)", y: 1190, height: 260 },
+  { id: 4, name: "Stage 5 — Comment & Review Loop", color: "var(--stage-5)", y: 1480, height: 240 },
+  { id: 5, name: "Stage 6 — Final Assembly & Submission", color: "var(--stage-6)", y: 1750, height: 160 }
 ];
 
 // Nodes mapped with clean vertical Top-to-Bottom coordinate points
+// NOTE: Human Gate 1 removed from Stage 1 as requested; review occurs after Stage 2 scoring at GO/NO-GO GATE.
 const NODES = [
-  // Stage 1
+  // Stage 1 (Ingestion)
   { id:'upload', label:'RFP Upload', sub:'PDF / DOCX Intake', stage:0, x:150, y:90 },
   { id:'markitdown', label:'MarkItDown', sub:'Convert → Markdown', stage:0, x:380, y:90 },
   { id:'chunker', label:'Chunker', sub:'512 token chunks', stage:0, x:610, y:90 },
   { id:'graph_ext', label:'Graph Extractor', sub:'Claude Sonnet Agent', stage:0, x:840, y:90 },
-  { id:'embed', label:'Embed Agent', sub:'Sentence-Transformers', stage:0, x:610, y:180 },
-  { id:'neo4j', label:'Requirement Graph', sub:'DynamoDB Adjacency', stage:0, x:840, y:180 },
-  { id:'pinecone', label:'FAISS Index', sub:'Local Vector Store', stage:0, x:610, y:270 },
   { id:'date_ext', label:'Date Extractor', sub:'Calendar & Slack', stage:0, x:1070, y:90 },
-  { id:'gate1', label:'HUMAN GATE 1', sub:'Review Graph Specs', stage:0, isGate:true, x:840, y:280 },
+  { id:'embed', label:'Embed Agent', sub:'Sentence-Transformers', stage:0, x:610, y:190 },
+  { id:'neo4j', label:'Requirement Graph', sub:'DynamoDB Adjacency', stage:0, x:840, y:190 },
+  { id:'pinecone', label:'FAISS Index', sub:'Local Vector Store', stage:0, x:610, y:270 },
 
-  // Stage 2
-  { id:'hard_gate', label:'Hard Pass Gate', sub:'7 Disqualifiers', stage:1, x:150, y:440 },
-  { id:'law_check', label:'Law & Req Check', sub:'Statute Compliance', stage:1, x:380, y:440 },
-  { id:'exp_gate', label:'Partner Check', sub:'COTS Exceptions', stage:1, x:610, y:440 },
-  { id:'scorer', label:'Weighted Scorer', sub:'100-Point Model', stage:1, x:840, y:440 },
-  { id:'elig_rpt', label:'Eligibility Report', sub:'Fit & Risk Score', stage:1, x:610, y:530 },
-  { id:'admin_notify1', label:'Admin Notify', sub:'Alert on Failure', stage:1, x:150, y:530 },
-  { id:'gate2', label:'GO / NO-GO GATE', sub:'Bid Approval', stage:1, isGate:true, x:610, y:620 },
-  { id:'timeline', label:'Proposal Timeline', sub:'Schedule Buffer', stage:1, x:840, y:620 },
+  // Stage 2 (Eligibility & Hard Gate)
+  { id:'hard_gate', label:'Hard Pass Gate', sub:'7 Disqualifiers', stage:1, x:150, y:420 },
+  { id:'law_check', label:'Law & Req Check', sub:'Statute Compliance', stage:1, x:380, y:420 },
+  { id:'exp_gate', label:'Partner Check', sub:'COTS Exceptions', stage:1, x:610, y:420 },
+  { id:'scorer', label:'Weighted Scorer', sub:'100-Point Model', stage:1, x:840, y:420 },
+  { id:'elig_rpt', label:'Eligibility Report', sub:'Score & Match Matrix', stage:1, x:610, y:510 },
+  { id:'admin_notify1', label:'Admin Notify', sub:'Alert on Failure', stage:1, x:150, y:510 },
+  { id:'gate2', label:'GO / NO-GO GATE', sub:'Single Bid Approval', stage:1, isGate:true, x:610, y:600 },
+  { id:'timeline', label:'Proposal Timeline', sub:'Schedule Buffer', stage:1, x:840, y:600 },
 
-  // Stage 3
-  { id:'master', label:'Master Agent', sub:'Task Dispatcher', stage:2, x:610, y:810 },
-  { id:'emp_f', label:'Employee Fetch', sub:'HRIS Records', stage:2, x:150, y:900 },
-  { id:'con_f', label:'Contract Fetch', sub:'Past Performance DB', stage:2, x:330, y:900 },
-  { id:'com_f', label:'Compliance Fetch', sub:'SAM.gov / Certs', stage:2, x:510, y:900 },
-  { id:'pri_f', label:'Pricing Fetch', sub:'Rate Matrix', stage:2, x:690, y:900 },
-  { id:'fin_f', label:'Financial Fetch', sub:'S3 Financials', stage:2, x:870, y:900 },
-  { id:'res_check', label:'Resource Check', sub:'Capacity Matrix', stage:2, x:1050, y:900 },
-  { id:'fq_wr', label:'Follow-up Qs', sub:'Clarifications', stage:2, x:420, y:990 },
-  { id:'gate3', label:'HUMAN GATE 3', sub:'Confirm Clarifications', stage:2, isGate:true, x:420, y:1080 },
-  { id:'ai_suggest', label:'AI Suggested Plan', sub:'Proposal Outline', stage:2, x:730, y:990 },
-  { id:'gate3b', label:'HUMAN GATE 3b', sub:'Edit & Plan Sign-off', stage:2, isGate:true, x:730, y:1080 },
+  // Stage 3 (Orchestration & Data Intake)
+  { id:'master', label:'Master Agent', sub:'Task Dispatcher', stage:2, x:610, y:780 },
+  { id:'emp_f', label:'Employee Fetch', sub:'HRIS Records', stage:2, x:120, y:860 },
+  { id:'con_f', label:'Contract Fetch', sub:'Past Performance DB', stage:2, x:280, y:860 },
+  { id:'com_f', label:'Compliance Fetch', sub:'SAM.gov / Certs', stage:2, x:440, y:860 },
+  { id:'pri_f', label:'Pricing Fetch', sub:'Rate Matrix', stage:2, x:600, y:860 },
+  { id:'fin_f', label:'Financial Fetch', sub:'S3 Financials', stage:2, x:760, y:860 },
+  { id:'res_check', label:'Resource Check', sub:'Capacity Matrix', stage:2, x:920, y:860 },
+  // NEW NODE: Pre-Conference & Extra Data Intake
+  { id:'pre_conf_input', label:'Pre-Conf & Data', sub:'User Notes & Addenda', stage:2, x:1080, y:860 },
+  { id:'fq_wr', label:'Follow-up Qs', sub:'Clarifications', stage:2, x:420, y:960 },
+  { id:'gate3', label:'HUMAN GATE 3', sub:'Confirm Clarifications', stage:2, isGate:true, x:420, y:1050 },
+  { id:'ai_suggest', label:'AI Suggested Plan', sub:'Proposal Outline', stage:2, x:760, y:960 },
+  { id:'gate3b', label:'HUMAN GATE 3b', sub:'Edit & Plan Sign-off', stage:2, isGate:true, x:760, y:1050 },
 
-  // Stage 4
-  { id:'sol_w', label:'Solution Writer', sub:'Technical Approach', stage:3, x:150, y:1260 },
-  { id:'exp_w', label:'Experience Writer', sub:'Past Performance', stage:3, x:360, y:1260 },
-  { id:'per_w', label:'Personnel Writer', sub:'Staff Profiles', stage:3, x:570, y:1260 },
-  { id:'com_w', label:'Compliance Writer', sub:'12 Cert Paragraphs', stage:3, x:780, y:1260 },
-  { id:'pri_w', label:'Pricing Writer', x:990, y:1260, sub:'E4.1 Pricing xlsx', stage:3 },
-  { id:'validator', label:'Citation Validator', sub:'Fact Grounding Pass', stage:3, x:570, y:1360 },
+  // Stage 4 (Writers)
+  { id:'sol_w', label:'Solution Writer', sub:'Technical Approach', stage:3, x:150, y:1230 },
+  { id:'exp_w', label:'Experience Writer', sub:'Past Performance', stage:3, x:360, y:1230 },
+  { id:'per_w', label:'Personnel Writer', sub:'Staff Profiles', stage:3, x:570, y:1230 },
+  { id:'com_w', label:'Compliance Writer', sub:'12 Cert Paragraphs', stage:3, x:780, y:1230 },
+  { id:'pri_w', label:'Pricing Writer', sub:'E4.1 Pricing xlsx', stage:3, x:990, y:1230 },
+  { id:'validator', label:'Citation Validator', sub:'Fact Grounding Pass', stage:3, x:570, y:1330 },
 
-  // Stage 5
-  { id:'gate4', label:'4-STAGE REVIEW', sub:'Multi-tier Signoff', stage:4, isGate:true, x:250, y:1550 },
-  { id:'editor', label:'Doc Editor', sub:'TipTap Editor', stage:4, x:500, y:1550 },
-  { id:'ai_edit', label:'AI Edit Agent', sub:'Range Rewrite', stage:4, x:710, y:1550 },
-  { id:'diff_v', label:'Diff Viewer', sub:'Red/Green Review', stage:4, x:920, y:1550 },
-  { id:'ver_hist', label:'Version History', sub:'S3 Immutable Log', stage:4, x:1130, y:1550 },
+  // Stage 5 (Review)
+  { id:'gate4', label:'4-STAGE REVIEW', sub:'Multi-tier Signoff', stage:4, isGate:true, x:250, y:1510 },
+  { id:'editor', label:'Doc Editor', sub:'TipTap Editor', stage:4, x:500, y:1510 },
+  { id:'ai_edit', label:'AI Edit Agent', sub:'Range Rewrite', stage:4, x:710, y:1510 },
+  { id:'diff_v', label:'Diff Viewer', sub:'Red/Green Review', stage:4, x:920, y:1510 },
+  { id:'ver_hist', label:'Version History', sub:'S3 Immutable Log', stage:4, x:1130, y:1510 },
 
-  // Stage 6
-  { id:'assembler', label:'Document Assembler', sub:'Portal Direct Upload', stage:5, x:610, y:1820 },
+  // Stage 6 (Submit)
+  { id:'assembler', label:'Document Assembler', sub:'Portal Direct Upload', stage:5, x:610, y:1770 },
 ];
 
-// Connection Edges
+// Connection Edges (Direct flow from Stage 1 into Stage 2 without Stage 1 Gate)
 const EDGES = [
-  // Stage 1
+  // Stage 1 Connections
   { from:'upload', to:'markitdown' },
   { from:'markitdown', to:'chunker' },
   { from:'chunker', to:'graph_ext' },
@@ -427,17 +450,16 @@ const EDGES = [
   { from:'graph_ext', to:'neo4j' },
   { from:'embed', to:'pinecone' },
   { from:'graph_ext', to:'date_ext' },
-  { from:'date_ext', to:'gate1' },
-  { from:'neo4j', to:'gate1' },
 
-  // Stage 1 → Stage 2
-  { from:'gate1', to:'hard_gate' },
-  { from:'gate1', to:'exp_gate' },
-  { from:'gate1', to:'scorer' },
-
-  // Stage 2
-  { from:'hard_gate', to:'law_check' },
+  // Direct Stage 1 → Stage 2 Flow
+  { from:'date_ext', to:'hard_gate' },
+  { from:'neo4j', to:'hard_gate' },
   { from:'neo4j', to:'law_check', dashed:true },
+  { from:'neo4j', to:'exp_gate', dashed:true },
+  { from:'neo4j', to:'scorer', dashed:true },
+
+  // Stage 2 Internal Flow
+  { from:'hard_gate', to:'law_check' },
   { from:'law_check', to:'elig_rpt' },
   { from:'exp_gate', to:'elig_rpt' },
   { from:'scorer', to:'elig_rpt' },
@@ -450,19 +472,25 @@ const EDGES = [
   // Stage 2 → Stage 3
   { from:'timeline', to:'master' },
 
-  // Stage 3
+  // Stage 3 Orchestration & Intake Flow
   { from:'master', to:'emp_f' },
   { from:'master', to:'con_f' },
   { from:'master', to:'com_f' },
   { from:'master', to:'pri_f' },
   { from:'master', to:'fin_f' },
   { from:'master', to:'res_check' },
+  { from:'master', to:'pre_conf_input' }, // Connection to Pre-Conf & Extra Data Intake
+
   { from:'emp_f', to:'fq_wr', dashed:true },
   { from:'con_f', to:'fq_wr', dashed:true },
+  { from:'pre_conf_input', to:'fq_wr', dashed:true }, // Pre-Conf input provides context for questions
   { from:'fq_wr', to:'gate3' },
   { from:'gate3', to:'ai_suggest' },
+
+  { from:'pre_conf_input', to:'ai_suggest' }, // Direct input into AI Suggested Plan
   { from:'res_check', to:'ai_suggest', dashed:true },
   { from:'pinecone', to:'ai_suggest', dashed:true },
+  { from:'pri_f', to:'ai_suggest', dashed:true },
   { from:'ai_suggest', to:'gate3b' },
 
   // Stage 3 → Stage 4
@@ -491,48 +519,103 @@ const EDGES = [
   { from:'ver_hist', to:'assembler' },
 ];
 
-// Node Technical Specs
+// Node Technical Specs & Structured Details
 const NODE_DETAILS = {
-  upload: { desc:'Entry point for all incoming RFP documents. Accepts PDF, DOCX, XLSX and scanned forms.', rows:[['Input Formats','PDF, DOCX, XLSX'],['Storage','Raw file → S3 (versioned)'],['Source','Email intake / Portal Watcher']] },
-  markitdown: { desc:'Converts uploaded formats into clean Markdown while preserving headers, tables, and section structure.', rows:[['Library','MarkItDown (Microsoft OSS)'],['Output','Structured Markdown']] },
-  chunker: { desc:'Splits long documents into overlapping text chunks optimized for LLM extraction.', rows:[['Chunk Size','512 tokens'],['Overlap','50 tokens'],['Tags','rfp_id, section, page_num']] },
-  graph_ext: { desc:'LLM agent reading chunks and extracting obligations, evaluation criteria, and deadlines into a requirement graph.', rows:[['Model','Claude Sonnet'],['Evidence','Every node cites page + quote']] },
-  embed: { desc:'Generates dense vector embeddings for semantic retrieval during proposal writing.', rows:[['Model','Sentence-Transformers (Local)'],['Privacy','Data stays fully in-house']] },
-  neo4j: { desc:'Lightweight custom requirement graph stored on DynamoDB single-table design.', rows:[['Storage','AWS DynamoDB'],['Pattern','Adjacency list design']] },
-  pinecone: { desc:'Self-hosted FAISS vector storage replacing managed SaaS vector DBs.', rows:[['Library','FAISS (Facebook AI Search)'],['Hosting','In-process / EFS backed']] },
-  date_ext: { desc:'Scans extracted graph for key milestone dates and schedules alerts.', rows:[['Detects','Pre-bid conf, Q&A deadline, submission'],['Push','Shared Calendar & Slack']] },
-  gate1: { desc:'First human checkpoint. Admin verifies requirement graph completeness.', rows:[['Reviewer','Admin / RFP Owner'],['Action','Confirm node counts & dates']] },
-  hard_gate: { desc:'Runs 7 auto-disqualifier checks (IT check, COTS, reseller, on-site, offshore, platform lock-in, non-IT).', rows:[['Logic','100% Pass required'],['Execution','Pre-paid LLM check']] },
-  law_check: { desc:'Cross-checks statute nodes against internal compliance databases.', rows:[['Checks','E-Verify, Israel Boycott §2271, Divestment'],['Failure Path','Routes to Stage 3 Clarifications']] },
-  exp_gate: { desc:'Checks for partner product references (DocAide, DirectSoft, InsurGPT).', rows:[['Effect','Waives COTS disqualifier if match found']] },
-  scorer: { desc:'Evaluates 100-point rubric across 5 core feasibility dimensions.', rows:[['Subtype','40 pts'],['Budget','25 pts'],['Location','20 pts'],['Timeline','10 pts'],['Qualifications','5 pts']] },
-  elig_rpt: { desc:'Consolidates hard pass results and weighted scoring into an actionable bid recommendation.', rows:[['Categories','HIGH_FIT ≥70 · MEDIUM 50-69 · LOW <50']] },
-  admin_notify1: { desc:'Triggers automatic notifications if an RFP fails disqualifiers or receives a NO-GO decision.', rows:[['Channels','Slack DM + Email Alert']] },
-  gate2: { desc:'Strategic decision point where approvers authorize proposal drafting expenses.', rows:[['Decision','PURSUE / NO-GO'],['Prevents','Unnecessary LLM cost on bad fits']] },
-  timeline: { desc:'Builds backward schedule from submission deadline with built-in safety buffers.', rows:[['Outputs','Draft due, Review due, Final submission']] },
-  master: { desc:'Orchestrator building execution manifests and fanning tasks out to sub-agents.', rows:[['Queue','AWS SQS FIFO'],['Pattern','Fan-out architecture']] },
-  emp_f: { desc:'Pulls relevant personnel experience from internal HR systems.', rows:[['Source','HRIS API']] },
-  con_f: { desc:'Queries historical contract DB for past performance citations.', rows:[['Source','PostgreSQL Contracts DB']] },
-  com_f: { desc:'Checks active registrations and security certifications.', rows:[['Source','SAM.gov + internal ISO records']] },
-  pri_f: { desc:'Retrieves internal rate matrix for cost estimations.', rows:[['Source','Internal Rate Card Matrix']] },
-  fin_f: { desc:'Retrieves audited financials and insurance certificates.', rows:[['Source','S3 Financial Vault']] },
-  res_check: { desc:'Verifies team availability against active project commitments.', rows:[['Checks','Overlap %, active project hours']] },
-  fq_wr: { desc:'Drafts precise vendor clarification questions for missing information.', rows:[['Rule','Never assume ambiguous requirements']] },
-  gate3: { desc:'Human checkpoint to review and confirm vendor clarification questions.', rows:[['Action','Provide inputs on generated Qs']] },
-  ai_suggest: { desc:'Synthesizes solution approach, team assignment, and commercial terms.', rows:[['Output','Draft Proposal Plan']] },
-  gate3b: { desc:'Reviewer edits and signs off on the technical plan before writer dispatch.', rows:[['Action','Add/remove technical approach items']] },
-  sol_w: { desc:'Drafts main technical solution approach section using RAG context.', rows:[['Output','E2.1.3 Approach section']] },
-  exp_w: { desc:'Drafts past performance narratives citing verified contracts.', rows:[['Output','Attachment A10 past performance']] },
-  per_w: { desc:'Drafts staff qualification sections and resume summaries.', rows:[['Output','E2.4 Key Personnel']] },
-  com_w: { desc:'Generates mandatory compliance paragraphs linked to requirement nodes.', rows:[['Output','12 certification paragraphs']] },
-  pri_w: { desc:'Populates required cost matrices and rate sheets.', rows:[['Output','E4.1 Pricing workbook (.xlsx)']] },
-  validator: { desc:'Automated quality pass checking that every claim cites a valid requirement node.', rows:[['Check','Fact grounding & citation resolution']] },
-  gate4: { desc:'Multi-tiered approval chain (Writer → Compliance → Approver → Admin).', rows:[['Type','Sequential Sign-off']] },
-  editor: { desc:'Collaborative document editor supporting range-bound inline comments.', rows:[['Engine','TipTap Rich Text']] },
-  ai_edit: { desc:'Rewrites specific character ranges based on reviewer feedback.', rows:[['Scope','Selected character range only']] },
-  diff_v: { desc:'Presents inline red/green comparison between original and AI rewrite.', rows:[['Display','Visual Text Diff']] },
-  ver_hist: { desc:'Stores immutable version logs of every accepted change.', rows:[['Storage','Versioned S3 Buckets']] },
-  assembler: { desc:'Packages finalized documents into exact required file formats and uploads to portal.', rows:[['Formats','.docx, .xlsx, .pdf, .mpp'],['Destination','Bonfire / Portal API']] },
+  upload: { desc:'Entry point for raw RFP document intake. Accepts PDF, DOCX, XLSX and scanned forms.', sections:[{ title:'Specs', rows:[['Input Formats','PDF, DOCX, XLSX'],['Storage Target','Raw S3 Bucket'],['Source Intakes','Email / Bonfire API']] }] },
+  markitdown: { desc:'Converts unstructured documents into unified Markdown preserving headings, data tables, and bullet lists.', sections:[{ title:'Specs', rows:[['Engine','Microsoft MarkItDown'],['Output','Clean Markdown Text']] }] },
+  chunker: { desc:'Splits raw Markdown into overlapping 512-token chunks tagged with source page and section metadata.', sections:[{ title:'Specs', rows:[['Chunk Window','512 Tokens'],['Overlap','50 Tokens']] }] },
+  graph_ext: { desc:'Extracts typed requirement nodes, laws, and evaluation criteria into a custom graph store.', sections:[{ title:'Specs', rows:[['Model','Claude 3.5 Sonnet'],['Grounding','100% Quote Citation']] }] },
+  embed: { desc:'Generates dense vector embeddings for RAG retrieval during proposal drafting.', sections:[{ title:'Specs', rows:[['Embedding Engine','Sentence-Transformers (Local)'],['Dimension','768-d Vectors']] }] },
+  neo4j: { desc:'Custom DynamoDB adjacency list database storing structured document nodes and typed legal relationships.', sections:[{ title:'Specs', rows:[['DB Engine','AWS DynamoDB (Serverless)'],['Schema','Adjacency Graph Model']] }] },
+  pinecone: { desc:'Self-hosted local FAISS vector index mounted on EFS storage for low-latency similarity queries.', sections:[{ title:'Specs', rows:[['Library','FAISS (Facebook AI)'],['Latency','< 12ms per query']] }] },
+  date_ext: { desc:'Scans extracted requirement graph for pre-bid conferences, Q&A cutoffs, and submission deadlines.', sections:[{ title:'Specs', rows:[['Target Dates','Pre-conf, Q&A, Final Deadline'],['Alerts','Slack & Calendar Integrations']] }] },
+  
+  hard_gate: { desc:'Automated 7-point pass/fail filter screening out non-viable RFPs before incurring paid LLM scoring costs.', sections:[{ title:'Disqualifier Checks', rows:[['Check 1','Non-IT Disqualifier'],['Check 2','COTS Requirement'],['Check 3','Reseller Only'],['Check 4','100% On-site Banned'],['Check 5','Offshore Ban'],['Check 6','Platform Lock-in'],['Check 7','Non-IT Services']] }] },
+  law_check: { desc:'Cross-checks statutory and legal requirements (E-Verify, Israel boycott, data residency) against company records.', sections:[{ title:'Compliance Scan', rows:[['Statute Checks','E-Verify, §2271, TX Divestment'],['Unmatched Action','Routed to Stage 3 Follow-up Qs']] }] },
+  exp_gate: { desc:'Checks if RFP references partner products (DocAide, DirectSoft, InsurGPT) to waive COTS disqualifier.', sections:[{ title:'Partner Scan', rows:[['Partners','DocAide, DirectSoft, InsurGPT']] }] },
+  scorer: { desc:'Evaluates viable RFPs against a weighted 100-point rubric across 5 strategic dimensions.', sections:[{ title:'Rubric Weights', rows:[['Project Subtype','40 Points'],['Budget Fit','25 Points'],['Location Policy','20 Points'],['Timeline Scope','10 Points'],['Qualifications','5 Points']] }] },
+  
+  // ENHANCED ELIGIBILITY REPORT: Displays Company Policy, Company Eligibility, and RFP Eligibility
+  elig_rpt: { 
+    desc: 'Consolidates hard pass outcomes, statutory checks, and the weighted 100-point rubric into a comprehensive pursuit recommendation matrix.',
+    sections: [
+      {
+        title: '1. Company Policy for RFP Score',
+        rows: [
+          ['Pursuit Threshold', 'Score ≥ 70/100 (HIGH_FIT) required for GO'],
+          ['Conditional Range', '50–69 (MEDIUM_FIT) requires Executive Waiver'],
+          ['Mandatory Non-Negotiables', 'No 100% on-site without travel budget allowance'],
+          ['Target Project Fit', 'Custom Software / Modernization ($25K–$5M)']
+        ]
+      },
+      {
+        title: '2. Company Eligibility (Based on RFP Demands)',
+        rows: [
+          ['Statutory Compliance', '16/18 clauses satisfied (E-Verify, SAM.gov active)'],
+          ['Security Clearances', 'ISO 27001 Active · SOC2 Type II Certified'],
+          ['Staffing Availability', 'Key Personnel Available (PM, Dev Lead, Architect)'],
+          ['Past Performance', '4+ Prime Contracts ≥ $10M matched'],
+          ['Identified Risk Flags', '2 unmatched statutory nodes → Stage 3 Questions']
+        ]
+      },
+      {
+        title: '3. RFP Eligibility (Based on Company Criteria)',
+        rows: [
+          ['Budget Alignment', '$1.2M RFP fits sweet spot ($25K–$5M target)'],
+          ['Technical Scope', 'Custom Dev required (No COTS product lock-in)'],
+          ['Delivery Location', 'Offshore & Remote work explicitly permitted'],
+          ['Timeline Window', '28 days to deadline (Includes 2-day buffer)']
+        ]
+      }
+    ]
+  },
+
+  admin_notify1: { desc:'Triggered whenever an RFP is disqualified or rejected at any gate. Sends email & Slack alerts.', sections:[{ title:'Alert Channels', rows:[['Notifications','Email SES + Slack DM']] }] },
+  gate2: { desc:'Executive decision gate where the bid manager evaluates the Eligibility Report before allocating proposal drafting budgets.', sections:[{ title:'Gate Action', rows:[['Decision Options','GO (Proceed) vs NO-GO (Archive)']] }] },
+  timeline: { desc:'Calculates drafting, reviewing, and buffer milestones backward from the official submission deadline.', sections:[{ title:'Schedule', rows:[['Buffer Window','2-Day Final Safety Buffer']] }] },
+  
+  master: { desc:'Orchestrates parallel data fetching and task dispatches across Stage 3 workers.', sections:[{ title:'Queue', rows:[['Task Dispatcher','AWS SQS FIFO Queue']] }] },
+  emp_f: { desc:'Queries internal HRIS system for qualified personnel profiles matching RFP staffing requirements.', sections:[{ title:'Source', rows:[['API','HRIS Employee Service']] }] },
+  con_f: { desc:'Searches PostgreSQL contract database for relevant past performance references.', sections:[{ title:'Source', rows:[['Database','PostgreSQL Past Performance']] }] },
+  com_f: { desc:'Pulls current SAM.gov registrations, ISO certifications, and corporate compliance letters.', sections:[{ title:'Source', rows:[['Vault','SAM.gov + ISO Repository']] }] },
+  pri_f: { desc:'Fetches internal rate cards and pricing matrices for commercial calculations.', sections:[{ title:'Source', rows:[['Rate Matrix','Internal Rate Store']] }] },
+  fin_f: { desc:'Retrieves audited financial statements and bonding letters.', sections:[{ title:'Source', rows:[['Storage','AWS S3 Encrypted Financials']] }] },
+  res_check: { desc:'Cross-checks project timeline and proposed personnel against active staff allocations.', sections:[{ title:'Check', rows:[['Capacity','Active Staff Allocation Matrix']] }] },
+  
+  // NEW NODE DETAILS: Pre-Conference & Extra Data Intake
+  pre_conf_input: {
+    desc: 'Captures user-submitted pre-bid conference Q&A notes, client addenda, verbal clarifications, and domain context to enrich proposal planning.',
+    sections: [
+      {
+        title: 'Intake Specification',
+        rows: [
+          ['Input Sources', 'Pre-bid Conf Notes, Addendum Uploads, User Prompts'],
+          ['Target Agents', 'AI Suggested Plan & Follow-up Qs Writer'],
+          ['Data Format', 'Rich Text Notes / Uploaded Addenda PDFs'],
+          ['Impact', 'Directly overrides missing RAG context with live client notes']
+        ]
+      }
+    ]
+  },
+
+  fq_wr: { desc:'Identifies missing data points in RFP and drafts formal vendor clarification questions.', sections:[{ title:'Output', rows:[['Format','Numbered Questions with Section Refs']] }] },
+  gate3: { desc:'Human checkpoint where the bid lead reviews and answers AI-drafted clarification questions.', sections:[{ title:'Action', rows:[['Reviewer','Bid Manager / Proposal Lead']] }] },
+  ai_suggest: { desc:'Generates a structured proposal plan including technical approach, team assignments, and commercials.', sections:[{ title:'Inputs', rows:[['Sources','RAG Context + Pre-Conf Notes + Rate Matrix']] }] },
+  gate3b: { desc:'Reviewer edits and approves technical solution outline, staffing, and pricing before full writing begins.', sections:[{ title:'Action', rows:[['Capabilities','Add / Remove / Edit Plan Items']] }] },
+  
+  sol_w: { desc:'Fargate worker drafting technical solution sections using RAG retrieval over past winning proposals.', sections:[{ title:'Output', rows:[['Section','E2.1.3 Technical Approach']] }] },
+  exp_w: { desc:'Drafts past performance narratives and formats Attachment A10 references.', sections:[{ title:'Output', rows:[['Section','Attachment A10 Past Performance']] }] },
+  per_w: { desc:'Formats key personnel resumes and qualification profiles for proposed staff.', sections:[{ title:'Output', rows:[['Section','E2.4 Key Personnel Profiles']] }] },
+  com_w: { desc:'Drafts 12 mandatory compliance paragraphs linking back to requirement graph IDs.', sections:[{ title:'Output', rows:[['Section','12 Statutory Compliance Paragraphs']] }] },
+  pri_w: { desc:'Generates the completed cost workbook matching mandated excel templates.', sections:[{ title:'Output', rows:[['Format','E4.1 Cost Sheet (.xlsx)']] }] },
+  validator: { desc:'Verifies every citation resolves to a real requirement chunk and checks for unsupported claims.', sections:[{ title:'Pass', rows:[['QA Checks','Citation Grounding & PII Filter']] }] },
+  
+  gate4: { desc:'Layered human review workflow across 4 sequential stages.', sections:[{ title:'Workflow', rows:[['Stages','Writer → Compliance → Approver → Admin']] }] },
+  editor: { desc:'In-app collaborative rich text editor powered by TipTap for inline comments.', sections:[{ title:'Framework', rows:[['Engine','TipTap Rich Text Editor']] }] },
+  ai_edit: { desc:'Executes targeted rewrites on specific highlighted character ranges without touching surrounding text.', sections:[{ title:'Scope', rows:[['Target','Selected Character Index Range']] }] },
+  diff_v: { desc:'Renders red/green side-by-side or inline text comparisons of AI rewrites.', sections:[{ title:'View', rows:[['Diff Engine','Red (Removed) vs Green (Added)']] }] },
+  ver_hist: { desc:'Stores immutable versioned snapshots of proposal documents in AWS S3.', sections:[{ title:'Storage', rows:[['Target','S3 Versioned Bucket']] }] },
+  assembler: { desc:'Routes individual proposal sections into required file formats and uploads bundle to portal API.', sections:[{ title:'Target', rows:[['Upload Portal','Direct API Upload (Bonfire)']] }] }
 };
 
 // ═══════════════════════════════════════════════════════════
@@ -578,10 +661,10 @@ NODES.forEach(n => {
   container.appendChild(nodeEl);
 });
 
-// Render SVG Edges with Smooth Bezier Curves
+// Render SVG Edges with Curved Bezier Paths
 function renderEdges() {
   let paths = '';
-  EDGES.forEach((e, i) => {
+  EDGES.forEach((e) => {
     const fromNode = NODES.find(n => n.id === e.from);
     const toNode = NODES.find(n => n.id === e.to);
     if(!fromNode || !toNode) return;
@@ -648,13 +731,13 @@ function clearHighlights() {
 }
 
 // ═══════════════════════════════════════════════════════════
-//  DETAIL DRAWER
+//  DETAIL DRAWER (Multi-section Rendering)
 // ═══════════════════════════════════════════════════════════
 function selectNode(n) {
   document.querySelectorAll('.node').forEach(node => node.classList.remove('selected'));
   document.getElementById(`node-${n.id}`).classList.add('selected');
 
-  const detail = NODE_DETAILS[n.id] || { desc: 'Component details.', rows: [] };
+  const detail = NODE_DETAILS[n.id] || { desc: 'Component details.', sections: [] };
   const stageCol = STAGES[n.stage] ? STAGES[n.stage].color : 'var(--gate-color)';
 
   const tagEl = document.getElementById('d-tag');
@@ -666,16 +749,28 @@ function selectNode(n) {
   document.getElementById('d-sub').textContent = n.sub;
   document.getElementById('d-desc').textContent = detail.desc;
 
-  const specList = document.getElementById('d-specs');
-  specList.innerHTML = '';
-  detail.rows.forEach(([k, v]) => {
-    specList.innerHTML += `
-      <div class="spec-item">
-        <span class="spec-label">${k}</span>
-        <span class="spec-val">${v}</span>
-      </div>
-    `;
-  });
+  const sectionsContainer = document.getElementById('d-sections');
+  sectionsContainer.innerHTML = '';
+  
+  if (detail.sections && detail.sections.length > 0) {
+    detail.sections.forEach(sec => {
+      let secHtml = `
+        <div class="detail-section">
+          <div class="section-title">✨ ${sec.title}</div>
+          <div class="spec-list">
+      `;
+      sec.rows.forEach(([k, v]) => {
+        secHtml += `
+          <div class="spec-item">
+            <span class="spec-label">${k}</span>
+            <span class="spec-val">${v}</span>
+          </div>
+        `;
+      });
+      secHtml += `</div></div>`;
+      sectionsContainer.innerHTML += secHtml;
+    });
+  }
 
   document.getElementById('drawer-overlay').classList.add('open');
   document.getElementById('drawer').classList.add('open');
@@ -688,7 +783,7 @@ function closeDrawer() {
 }
 
 // ═══════════════════════════════════════════════════════════
-//  SEARCH FILTER
+//  SEARCH FILTER & CONTROLS
 // ═══════════════════════════════════════════════════════════
 function filterNodes() {
   const query = document.getElementById('search-input').value.toLowerCase();
